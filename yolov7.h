@@ -21,18 +21,19 @@ public:
 private:
 	int inpWidth = 0;
 	int inpHeight = 0;
-	int nout = 0;
 	int num_proposal = 0;
-	std::vector<std::string> class_names;
-	int num_class = 0;
+	std::vector<std::string> class_names = { "front", "back" };
+	int num_class = class_names.size();
 
 	double confThreshold = 0.25;
 	double nms_threshold = 0.45;
 	std::set<int> excluded_indices;
+	std::string save_path = "../results/";
+
+	std::vector<cv::Mat> masks_vec;
 
 	std::vector<char*> input_name_vec = {(char*)"images"};
 	std::vector<char*> output_name_vec = { (char*)"output",(char*)"onnx::Slice_531",(char*)"onnx::Slice_638" ,(char*)"onnx::Slice_744",(char*)"516" };
-
 	Ort::Env env = Ort::Env(ORT_LOGGING_LEVEL_FATAL, "YOLOV7");
 	Ort::SessionOptions session_options_ = Ort::SessionOptions();
 	//*************************************************************************

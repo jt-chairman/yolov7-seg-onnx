@@ -56,11 +56,6 @@ YOLOV7::YOLOV7() {
 	auto output_tensor_info = output_type_info.GetTensorTypeAndShapeInfo();
 	auto output_dims = output_tensor_info.GetShape();
 
-	this->nout = output_dims[2];
-	this->num_proposal = output_dims[1];
-
-	this->class_names = { "front", "back" };
-	this->num_class = class_names.size();
 }
 
 float YOLOV7::iou(Bboxf& box1, Bboxf& box2) {
@@ -260,9 +255,6 @@ vector<Mat> YOLOV7::process_mask(vector<vector<vector<float>>> proto, vector<int
 	Mat masks_2d = masks_in_m * proto_2d;
 	cv::exp(-masks_2d, masks_2d);
 	masks_2d = 1 / (1 + masks_2d);
-	int sz[] = { c , mh, mw };
-	Mat masks(3, sz, CV_32F);
-	std::memcpy(masks.data, masks_2d.data, c * mh * mw);
 
 
 	for (vector<float>& box : bboxes) {
@@ -271,7 +263,7 @@ vector<Mat> YOLOV7::process_mask(vector<vector<vector<float>>> proto, vector<int
 		box[1] *= (float)mh / ih;
 		box[3] *= (float)mh / ih;
 	}
-	float* p = (float*)masks.data;
+	float* p = (float*)masks_2d.data;
 	vector<Mat> vec_masks;
 	for (int i = 0; i < bboxes.size(); i++) {
 		Mat tmp(Size(mw, mh), CV_32F);
@@ -295,7 +287,7 @@ void YOLOV7::scale_coords(vector<vector<float>>& boxes, int src_w, int src_h, in
 	// in utils/general.py
 	// refer to line 777
 	float gain = std::min((float)w / src_w, (float)h / src_h);
-	float pad[2](((float)h - src_h * gain) / 2, ((float)w - src_w * gain) / 2);
+	float pad[2](((float)w - src_w * gain) / 2, ((float)h - src_h * gain) / 2);
 	for (vector<float>& box : boxes) {
 		for (int i = 0; i < 4; i++) {
 			if (i == 0 || i == 2) {
@@ -346,11 +338,12 @@ vector<float> YOLOV7::preprocess(cv::Mat& img) {
 			}
 		}
 	}
-	imwrite("C:/Users/Jt-chairman/Desktop/111.bmp", img);
 	return input_data;
 }
 
 void YOLOV7::run(Mat frame){
+	Mat rect = frame.clone();
+	cvtColor(rect, rect, COLOR_GRAY2RGB);
 	int ih = frame.rows;
 	int iw = frame.cols;
 	vector<float> input_data = preprocess(frame);
@@ -371,12 +364,16 @@ void YOLOV7::run(Mat frame){
 	vector<vector<vector<float>>> det = nonMaxSuppression(pred, shape0);
 
 	for (int i = 0; i < det.size(); i++) {
-		vector<Mat> masks = process_mask(proto, shape4, det[i], inpHeight, inpWidth);
-		imwrite("C:/Users/Jt-chairman/Desktop/222.bmp", masks[0] * 255);
-		imwrite("C:/Users/Jt-chairman/Desktop/333.bmp", masks[1] * 255);
-		imwrite("C:/Users/Jt-chairman/Desktop/444.bmp", masks[2] * 255);
+		masks_vec = process_mask(proto, shape4, det[i], inpHeight, inpWidth);
 		scale_coords(det[i], iw, ih, inpWidth, inpHeight);
 	}
-	int a = 1;
+
+	for (int i = 0; i < det[0].size(); i++) {
+		imwrite(save_path + "mask#" + to_string(i) + ".bmp", masks_vec[i] * 255);
+		cout << save_path + "mask#" + to_string(i) + ".bmp" << endl;
+		rectangle(rect, cv::Point((int)det[0][i][0], (int)det[0][i][1]), cv::Point((int)det[0][i][2], (int)det[0][i][3]), cv::Scalar(0, 255, 0));
+	}
+	imwrite(save_path + "rect" + ".bmp", rect);
+
 }
 
