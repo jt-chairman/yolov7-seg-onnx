@@ -210,7 +210,7 @@ void YOLOV7::crop(vector<Mat>& masks, vector<vector<float>> boxes, int h, int w)
 		for (int i = 0; i < h; i++) {
 			for (int j = 0; j < w; j++) {
 				if (j < left || j > right || i < top || i > bottom) {;
-					masks[k].at<float>(i, j) = 0;
+					masks[k].at<uchar>(i, j) = 0;
 				}
 			}
 		}
@@ -218,7 +218,7 @@ void YOLOV7::crop(vector<Mat>& masks, vector<vector<float>> boxes, int h, int w)
 
 }
 
-vector<Mat> YOLOV7::process_mask(vector<vector<vector<float>>> proto, vector<int64_t> proto_shape, vector<vector<float>> det, int ih, int iw) {
+void YOLOV7::process_mask(vector<vector<vector<float>>> proto, vector<int64_t> proto_shape, vector<vector<float>> det, int ih, int iw) {
 	// in segment/general.py
 	
 	vector<vector<float>> masks_in;
@@ -264,23 +264,20 @@ vector<Mat> YOLOV7::process_mask(vector<vector<vector<float>>> proto, vector<int
 		box[3] *= (float)mh / ih;
 	}
 	float* p = (float*)masks_2d.data;
-	vector<Mat> vec_masks;
 	for (int i = 0; i < bboxes.size(); i++) {
-		Mat tmp(Size(mw, mh), CV_32F);
+		Mat tmp(Size(mw, mh), CV_8U);
 		for (int j = 0; j < mh * mw; j++) {
-			tmp.at<float>(j / mw, j % mw) = p[i * mh * mw + j];
+			tmp.at<uchar>(j / mw, j % mw) = (int)(p[i * mh * mw + j] * 255);
 		}
-		vec_masks.push_back(tmp);
+		m_masks.push_back(tmp);
 	}
 
 
-	crop(vec_masks, bboxes, mh, mw);
-	for (int i = 0; i < vec_masks.size(); i++) {
-		resize(vec_masks[i], vec_masks[i], cv::Size(iw, ih));
-		threshold(vec_masks[i], vec_masks[i], 0.5, 1, THRESH_BINARY);
+	crop(m_masks, bboxes, mh, mw);
+	for (int i = 0; i < m_masks.size(); i++) {
+		resize(m_masks[i], m_masks[i], cv::Size(iw, ih));
+		threshold(m_masks[i], m_masks[i], 126, 255, THRESH_BINARY);
 	}
-
-	return vec_masks;
 }
 
 void YOLOV7::scale_coords(vector<vector<float>>& boxes, int src_w, int src_h, int w, int h){
@@ -310,6 +307,13 @@ void YOLOV7::scale_coords(vector<vector<float>>& boxes, int src_w, int src_h, in
 				box[i] = box[i] < src_h ? box[i] : src_h;
 			}
 		}
+	}
+	for (int i = 0; i < boxes.size(); i++) {
+		vector<int> tmp;
+		for (int j = 0; j < 4; j++) {
+			tmp.push_back((int)boxes[i][j]);
+		}
+		m_bboxes.push_back(tmp);
 	}
 }
 
@@ -364,12 +368,12 @@ void YOLOV7::run(Mat frame){
 	vector<vector<vector<float>>> det = nonMaxSuppression(pred, shape0);
 
 	for (int i = 0; i < det.size(); i++) {
-		masks_vec = process_mask(proto, shape4, det[i], inpHeight, inpWidth);
+		process_mask(proto, shape4, det[i], inpHeight, inpWidth);
 		scale_coords(det[i], iw, ih, inpWidth, inpHeight);
 	}
 
 	for (int i = 0; i < det[0].size(); i++) {
-		imwrite(save_path + "mask#" + to_string(i) + ".bmp", masks_vec[i] * 255);
+		imwrite(save_path + "mask#" + to_string(i) + ".bmp", m_masks[i]);
 		cout << save_path + "mask#" + to_string(i) + ".bmp" << endl;
 		rectangle(rect, cv::Point((int)det[0][i][0], (int)det[0][i][1]), cv::Point((int)det[0][i][2], (int)det[0][i][3]), cv::Scalar(0, 255, 0));
 	}

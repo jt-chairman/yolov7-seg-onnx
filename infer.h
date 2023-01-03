@@ -1,5 +1,4 @@
 #pragma once
-#include "global.h"
 #include <assert.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
