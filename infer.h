@@ -1,5 +1,6 @@
 #pragma once
 #include <assert.h>
+#include <time.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <onnxruntime_cxx_api.h>

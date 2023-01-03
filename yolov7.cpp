@@ -134,7 +134,7 @@ vector<vector<vector<float>>> YOLOV7::nonMaxSuppression(vector<vector<vector<flo
 			}
 			tmp.push_back(conf[i]);
 			tmp.push_back((float)j[i]);
-			for (int ii = 7; ii < shape[2]; ii++) {
+			for (int ii = mi; ii < shape[2]; ii++) {
 				tmp.push_back(mask[i][ii]);
 			}
 			x_prime.push_back(tmp);
@@ -219,7 +219,7 @@ void YOLOV7::crop(vector<Mat>& masks, vector<vector<float>> boxes, int h, int w)
 }
 
 void YOLOV7::process_mask(vector<vector<vector<float>>> proto, vector<int64_t> proto_shape, vector<vector<float>> det, int ih, int iw) {
-	// in segment/general.py
+	// in utils/segment/general.py
 	
 	vector<vector<float>> masks_in;
 	vector<vector<float>> bboxes;
