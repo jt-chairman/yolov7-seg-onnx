@@ -1,4 +1,4 @@
-# yolov7-instance-segmentation
+# yolov7-seg deployed by onnx
 yolov7 instance segmentation deployed by onnx
 
 The code of Yolov7 instance segmentation image pre-processing and model result post-processing is mainly rewritten.
