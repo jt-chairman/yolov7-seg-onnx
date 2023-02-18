@@ -29,15 +29,15 @@ inline vector<int64_t> acquire_output_shape(vector<Value>& ort_outputs, int num)
 YOLOV7::YOLOV7() {
 
 	 /**
-    * ³õÊ¼»¯SessionÑ¡Ïî
+    * åˆå§‹åŒ–Sessioné€‰é¡¹
     * Available levels are
-    * ORT_DISABLE_ALL -> ½ûÓÃËùÓĞÓÅ»¯
-    * ORT_ENABLE_BASIC -> ÒªÆôÓÃ»ù±¾ÓÅ»¯(ÈçÈßÓà½ÚµãÉ¾³ı)
-    * ORT_ENABLE_EXTENDED -> ÆôÓÃÀ©Õ¹ÓÅ»¯(°üÀ¨1¼¶ÒÔÉÏ¸ü¸´ÔÓµÄÓÅ»¯£¬Èç½ÚµãÈÚºÏ)
-    * ORT_ENABLE_ALL -> ÆôÓÃËùÓĞ¿ÉÄÜµÄÓÅ»¯
+    * ORT_DISABLE_ALL -> ç¦ç”¨æ‰€æœ‰ä¼˜åŒ–
+    * ORT_ENABLE_BASIC -> è¦å¯ç”¨åŸºæœ¬ä¼˜åŒ–(å¦‚å†—ä½™èŠ‚ç‚¹åˆ é™¤)
+    * ORT_ENABLE_EXTENDED -> å¯ç”¨æ‰©å±•ä¼˜åŒ–(åŒ…æ‹¬1çº§ä»¥ä¸Šæ›´å¤æ‚çš„ä¼˜åŒ–ï¼Œå¦‚èŠ‚ç‚¹èåˆ)
+    * ORT_ENABLE_ALL -> å¯ç”¨æ‰€æœ‰å¯èƒ½çš„ä¼˜åŒ–
     **/
 	session_options_.SetIntraOpNumThreads(1);
-	session_options_.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED); /** ÉèÖÃÍ¼ÏñÓÅ»¯¼¶±ğ **/
+	session_options_.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED); /** è®¾ç½®å›¾åƒä¼˜åŒ–çº§åˆ« **/
 
 	//OrtStatus* status = OrtSessionOptionsAppendExecutionProvider_CUDA(sessionOptions, 0);
 
@@ -59,13 +59,13 @@ YOLOV7::YOLOV7() {
 }
 
 float YOLOV7::iou(Bboxf& box1, Bboxf& box2) {
-	double max_x = std::max(box1.x1, box2.x1);  // ÕÒ³ö×óÉÏ½Ç×ø±êÄÄ¸ö´ó
+	double max_x = std::max(box1.x1, box2.x1);  // æ‰¾å‡ºå·¦ä¸Šè§’åæ ‡å“ªä¸ªå¤§
 	double max_y = std::max(box1.y1, box2.y1);
-	double min_x = std::min(box1.x2, box2.x2);  // ÕÒ³öÓÒÏÂ½Ç×ø±êÄÄ¸öĞ¡
+	double min_x = std::min(box1.x2, box2.x2);  // æ‰¾å‡ºå³ä¸‹è§’åæ ‡å“ªä¸ªå°
 	double min_y = std::min(box1.y2, box2.y2);
-	if (min_x <= max_x || min_y <= max_y) // Èç¹ûÃ»ÓĞÖØµş
+	if (min_x <= max_x || min_y <= max_y) // å¦‚æœæ²¡æœ‰é‡å 
 		return 0;
-	float over_area = (min_x - max_x) * (min_y - max_y);  // ¼ÆËãÖØµşÃæ»ı
+	float over_area = (min_x - max_x) * (min_y - max_y);  // è®¡ç®—é‡å é¢ç§¯
 	float area1 = area(box1);
 	float area2 = area(box2);
 	float iou = over_area / (area1 + area2 - over_area);
@@ -155,9 +155,9 @@ vector<vector<vector<float>>> YOLOV7::nonMaxSuppression(vector<vector<vector<flo
 		for (int i = 0; i < x_prime.size(); i++) {
 			vector<float> tmp;
 			scores.push_back(x_prime[i][4]);
-			float c = x_prime[i][5] * max_wh;
+			//float c = x_prime[i][5] * max_wh;
 			for (int ii = 0; ii < 4; ii++) {
-				tmp.push_back(x_prime[i][ii] + c);
+				tmp.push_back(x_prime[i][ii]);
 			}
 			boxes.push_back(tmp);
 		}
@@ -356,8 +356,8 @@ void YOLOV7::run(Mat frame){
 	auto allocator_info = MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 	Value input_tensor_ = Value::CreateTensor<float>(allocator_info, input_data.data(), input_data.size(), input_shape_.data(), input_shape_.size());
 
-	// ¿ªÊ¼ÍÆÀí
-	vector<Value> ort_outputs = session_.Run(RunOptions{ nullptr }, &input_name_vec[0], &input_tensor_, 1, output_name_vec.data(), output_name_vec.size());   // ¿ªÊ¼ÍÆÀí
+	// å¼€å§‹æ¨ç†
+	vector<Value> ort_outputs = session_.Run(RunOptions{ nullptr }, &input_name_vec[0], &input_tensor_, 1, output_name_vec.data(), output_name_vec.size());   // å¼€å§‹æ¨ç†
 
 	vector<int64_t> shape0 = acquire_output_shape(ort_outputs, 0);
 	vector<vector<vector<float>>> pred = acquire_output(ort_outputs, 0, shape0);
